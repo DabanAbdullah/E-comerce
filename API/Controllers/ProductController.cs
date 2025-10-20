@@ -21,6 +21,19 @@ namespace API.Controllers
             return Ok(await PR.GetProductsAsync());
         }
 
+
+        // GET: api/product
+        [HttpGet("Filter")]
+        public async Task<ActionResult<IReadOnlyList<string>>> GetProducts(string? brand, string? type, string? sort)
+        {
+            var products = await PR.GetProductByBrandorTypeAsync(brand, type, sort);
+            return Ok(products);
+        }
+
+
+
+
+
         // GET: api/product/5
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Product>> GetProductById(int id)
@@ -29,6 +42,7 @@ namespace API.Controllers
 
             return await PR.GetProductByIdAsync(id);
         }
+
 
         // POST: api/product
         [HttpPost]
