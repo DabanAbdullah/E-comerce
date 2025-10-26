@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Core.Entities;
+using Core.Specifications;
 using Core.Interfaces;
 using Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ProductController(IProductsRepository PR) : ControllerBase
+    public class ProductController(IGenericRepository<Product> PR) : ControllerBase
     {
 
 
@@ -18,7 +19,7 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<Product>>> GetAllProducts()
         {
-            return Ok(await PR.GetProductsAsync());
+            return Ok(await PR.ListAllAsync());
         }
 
 
@@ -26,11 +27,32 @@ namespace API.Controllers
         [HttpGet("Filter")]
         public async Task<ActionResult<IReadOnlyList<string>>> GetProducts(string? brand, string? type, string? sort)
         {
-            var products = await PR.GetProductByBrandorTypeAsync(brand, type, sort);
+            var spec = new ProductSpecification(brand, type, sort);
+            var products = await PR.GetListWithSpecAsync(spec);
+
             return Ok(products);
         }
 
 
+
+        // GET: api/product
+        [HttpGet("GetTypes")]
+        public async Task<ActionResult<IReadOnlyList<string>>> GetTypes()
+        {
+            var spec = new TypeListSpecification();
+            var Types = await PR.GetListWithSpecAsync(spec); //to implement later
+            return Ok(Types);
+
+        }
+
+        [HttpGet("GetBrands")]
+        public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
+        {
+
+            var spec = new BrandListSpecification();
+            var Brands = await PR.GetListWithSpecAsync(spec); //to implement later
+            return Ok(Brands);
+        }
 
 
 
@@ -40,7 +62,7 @@ namespace API.Controllers
         {
 
 
-            return await PR.GetProductByIdAsync(id);
+            return await PR.GetByIdAsync(id);
         }
 
 
@@ -48,8 +70,8 @@ namespace API.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
-            PR.CreateProduct(product);
-            if (await PR.SaveChangesAsync())
+            PR.AddAsync(product);
+            if (await PR.SaveAllAsync())
             {
                 return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
             }
@@ -64,8 +86,8 @@ namespace API.Controllers
             if (id != product.Id)
                 return BadRequest();
 
-            PR.UpdateProduct(product);
-            if (!await PR.SaveChangesAsync())
+            PR.UpdateAsync(product);
+            if (!await PR.SaveAllAsync())
                 return BadRequest("Failed to update product.");
 
             return NoContent();
@@ -75,17 +97,25 @@ namespace API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var product = await PR.GetProductByIdAsync(id);
+            var product = await PR.GetByIdAsync(id);
             if (product == null)
                 return NotFound();
 
-            PR.DeleteProduct(product);
-            if (!await PR.SaveChangesAsync())
+            PR.DeleteAsync(product);
+            if (!await PR.SaveAllAsync())
                 return BadRequest("Failed to Delete product.");
 
             return NoContent();
 
 
+        }
+
+
+
+
+        private bool ProductExists(int id)
+        {
+            return PR.Exists(id);
         }
     }
 }
