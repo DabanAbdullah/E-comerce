@@ -25,9 +25,9 @@ namespace API.Controllers
 
         // GET: api/product
         [HttpGet("Filter")]
-        public async Task<ActionResult<IReadOnlyList<string>>> GetProducts(string? brand, string? type, string? sort)
+        public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts([FromQuery] ProductSpecParams specParams)
         {
-            var spec = new ProductSpecification(brand, type, sort);
+            var spec = new ProductSpecification(specParams);
             var products = await PR.GetListWithSpecAsync(spec);
 
             return Ok(products);

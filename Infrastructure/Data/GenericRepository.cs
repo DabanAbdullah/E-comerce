@@ -52,7 +52,32 @@ public class GenericRepository<T>(StoreContext context) : IGenericRepository<T> 
 
     public async Task<IReadOnlyList<T>> GetListWithSpecAsync(ISpecification<T> spec)
     {
-        return await ApplySpecification(spec).ToListAsync();
+        var query = ApplySpecification(spec);
+        try
+        {
+            // Print generated SQL for debugging (helpful to diagnose SQL syntax errors)
+            Console.WriteLine("Generated SQL:\n" + query.ToQueryString());
+        }
+        catch
+        {
+            // Ignore if ToQueryString is not supported in the runtime environment
+        }
+
+        try
+        {
+            return await query.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                throw new Exception($"Error executing SQL:\n{query.ToQueryString()}", ex);
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 
 
@@ -65,7 +90,30 @@ public class GenericRepository<T>(StoreContext context) : IGenericRepository<T> 
 
     public async Task<IReadOnlyList<TResult>> GetListWithSpecAsync<TResult>(ISpecification<T, TResult> spec)
     {
-        return await ApplySpecification(spec).ToListAsync();
+        var query = ApplySpecification(spec);
+        try
+        {
+            Console.WriteLine("Generated SQL (select):\n" + query.ToQueryString());
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            return await query.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                throw new Exception($"Error executing SQL (select):\n{query.ToQueryString()}", ex);
+            }
+            catch
+            {
+                throw;
+            }
+        }
     }
 
 
