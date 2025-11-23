@@ -1,10 +1,25 @@
+# docker-compose.yml
 version: '3.9'
 
 services:
-  sql:
+  sqlserverdb:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserverdb
+    restart: unless-stopped
     environment:
-      SA_PASSWORD: "Password@1"
       ACCEPT_EULA: "Y"
+      SA_PASSWORD: "MyS3cureP@ssw0rd2025!"   # ← MUST be this name
+      MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-U", "sa", "-P", "MyS3cureP@ssw0rd2025!", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  sql_data:
